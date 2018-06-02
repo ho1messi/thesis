@@ -1,0 +1,340 @@
+\chapter{系统设计}
+
+    \section{系统概要设计}
+
+        因为存在 web 服务器和手机应用两部分的需求，本次课程设计也主要分成两个部分来进行设计，同时 web 服务器还依赖于数据库提供的数据持久化存储的服务。web 服务器负责给手机端的应用提供所有的景区和景点的信息，同时还在 web 服务器上为每个景区维护一个用于图片识别的神经网络模型，为手机端的应用提供图像识别的服务；手机端应用则是用户直接操作的界面，用户可以在手机端应用中完成所有的操作，并通过手机端应用从 web 服务器中获得所有的信息和完成景点识别的功能。
+
+    \section{功能结构设计}
+
+        功能结构设计如图 3-1 所示，主要分为 WEB 服务器和 APP 客户端两大部分：
+
+        \begin{figure}[htbp]
+            \includegraphics[width=15cm]{structure.pdf}
+            \centering
+            \caption{功能结构图}
+        \end{figure}
+
+        \subsection{WEB 服务器功能结构设计}
+
+        \begin{enumerate}
+            
+            \item 用户验证。用户在发表攻略、发表讨论、点赞或者评论之前 WEB 服务器需要向用户验证当前身份，以确保用户是在登录状态下才能继续完成上述操作。每个内容都需要绑定至一个特定的用户，此时该用户作为该内容的作者。
+
+            \item 内容检索。用户在通过 APP 客户端获取特定的内容时，APP 客户端会帮助用户向 WEB 服务器发送一个请求，然后 WEB 服务器按照用户的要求去检索已有的数据，并将数据打包成一个 json 对象返回给 APP 客户端。
+
+            \item 数据存储。WEB 服务器还需要连接到一个部署在本地的数据库，用来做数据的持久化存储。WEB 服务器能检索到的所有数据都来自于这个数据库。
+
+            \item 景点识别。景点识别需要单独作为一个外部的功能调用来实现，可以将训练好的卷积神经网络模型提前加载至内存中，在需要识别的时候直接使用这个训练好的神经网络来识别图像。
+
+        \end{enumerate}
+
+        \subsection{APP 客户端功能结构设计}
+
+        \begin{enumerate}
+            
+            \item 用户注册。用户在初次使用时需要向 WEB 服务器注册自己，而这个功能需要通过 APP 客户端的界面来帮助实现。用户在使用时可以直接在 APP 客户端的界面中进行注册和登录的操作。
+            
+            \item 景区地图。用户在游览时需要的景区地图直接使用接入的地图模块来实现，在用户选择景区之后将地图中心定位至景区所在位置，并放大地图至合适的比例让用户得以通过地图大致浏览当前景区。
+            
+            \item 景点定位。在选择完景区之后，该景区内的所有景点的位置都会在地图上标出，配和景区地图来帮助用户看到自己的位置和景点位置的相对关系。
+            
+            \item 景点评分。用户可以对游览过的景点进行评分，评分过后在景点的首页上会显示出所有用户对该景点的平均评分，评分以星级的方式显示出来。
+            
+            \item 上传图片。用户需要识别图片的时候，可以通过 APP 客户端拍照或者是直接从相册中选择已经提前拍好的图片。APP 客户端将图片上传至 WEB 服务器，之后服务器将该图片用于景点识别并将最后的识别结果返回给 APP 客户端。
+            
+            \item 内容发布。服务器中除景区和景点相关信息之外的内容都是由用户们发布的，用户在 APP 客户端中简单点击一下按钮就能进入到内容发布的界面，发布成功的话就能在 WEB 服务器对应的数据库中添加内容。
+            
+            \item 内容浏览。在 APP 客户端向 WEB 服务器发送请求并接收到返回的数据之后，APP 客户端再对接收到的数据进行渲染，最后将渲染好的内容在界面中呈现给用户。
+            
+            \item 点赞评论。对于喜欢的评论，用户可以使用点赞的方式支持，点赞的人数代表着人气并且在一定程度上也代表着内容的质量；如果用户对该内容深有感触或者持有不同观点，也可以通过评论的方式来表达。
+            
+            \item 语音朗读。语音朗读能将指定的文字转换为语音朗读给用户，在用户查看内容时能解放双眼，直接听到想要了解的内容。
+
+        \end{enumerate}
+
+    % \section{系统流程设计}
+
+    \section{数据库设计}
+
+        \subsection{数据库总体设计及含义}
+            数据库部分总体设计即所有表的含义如下：
+
+            \begin{enumerate}
+                
+                \item 景区表（scenic\_area），存储一个景区的数据；
+                \item 景点表（scenic\_spot）则是存储了景点的数据，每条景点数据都必须要有一个非空的外键指向一条景区表的数据；
+                \item 用户表（user）存储了用户的数据，包括了用户的用户名、密码、邮箱以及是否是管理员等；
+                \item 攻略表（article）存储用户发布的攻略的数据，每篇攻略都有一个非空外键指向用户表，作为该攻略的作者；
+                \item 讨论表（discussion）存储用户发布的讨论的数据，每篇讨论都有一个非空外键指向用户表，作为该讨论的作者；
+                \item 评论表（comment）存储用户发布的评论的数据，每篇评论都有一个非空外键指向用户表，作为该评论的作者；
+                \item 景区攻略表（area\_article）存储景区和攻略的关系，一个非空的外键指向景区表，另一个非空的外键指向攻略表，每一条景区攻略表的记录代表该攻略是针对对应的景区的；
+                \item 景区讨论表（area\_discussion）存储景区和讨论的关系，一个非空的外键指向景区表，另一个非空的外键指向讨论表，每一条景区讨论表的记录代表该讨论是针对对应的景区的；
+                \item 景点攻略表（spot\_article）存储景点和攻略的关系，一个非空的外键指向景点表，另一个非空的外键指向攻略表，每一条景点攻略表的记录代表该攻略是针对对应的景点的；
+                \item 景点讨论表（spot\_discussion）存储景点和讨论的关系，一个非空的外键指向景点表，另一个非空的外键指向讨论表，每一条景点讨论表的记录代表该讨论是针对对应的景点的；
+                \item 景区评分表（area\_score）存储用户对景区的评分，一个非空的外键指向用户表，另一个非空的外键指向景区表，并且两个外键不能同时重复；
+                \item 景点评分表（spot\_score）存储用户对景点的评分，一个非空的外键指向用户表，另一个非空的外键指向景点表，并且两个外键不能同时重复；
+                \item 攻略点赞表（vote\_article）存储用户对攻略的点赞，一个非空的外键指向用户表，另一个非空的外键指向攻略表，表示该用户对该攻略点了赞；
+                \item 讨论点赞表（vote\_discussion）存储用户对讨论的点赞，一个非空的外键指向用户表，另一个非空的外键指向讨论表，表示该用户对该讨论点了赞；
+                \item 攻略评论表（article\_comment）存储对攻略的评论，一个非空的外键指向攻略表，另一个非空的外键指向评论表，表示该评论是对应该攻略的评论；
+                \item 讨论评论表（discussion\_comment）存储对讨论的评论，一个非空的外键指向讨论表，另一个非空的外键指向评论表，表示该评论时对应该讨论的评论；
+                \item 评论评论表（comment\_comment）存储对评论的评论，两个非空的外键指向评论表，一个做为源评论，一个作为目标评论，表示源评论是对目标评论的评论。
+
+            \end{enumerate}
+
+        \subsection{数据库具体设计及字段说明}
+
+            下面详细列出每个表的具体字段和说明：
+
+            \begin{table}[htbp]
+                \caption{\wuhao 景区表（scenic\_area）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & 景区的ID\\
+                    name & varchar(200) & 非空 & 景区的名称\\
+                    latitude & double & 非空 & 景区的经度\\
+                    longitude & double & 非空 & 景区的纬度\\
+                    about & longtext & 无 & 景区的介绍文本\\
+                    image & varchar(200) & 无 & 景区介绍图片的路径\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 景点表（scenic\_spot）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & AI PK & 景点的ID\\
+                    name & varchar(200) & 非空 & 景点的名称\\
+                    latitude & double & 非空 & 景点的经度\\
+                    longitude & double & 非空 & 景点的纬度\\
+                    about & longtext & 无 & 景点的介绍文本\\
+                    image & varchar(200) & 无 & 景点介绍图片的路径\\
+                    area\_id & int(11) & 非空 & 景点所在景区的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 用户表（user）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & 用户的ID\\
+                    username & varchar(150) & 非空 & 用户名\\
+                    password & varchar(128) & 非空 & 用户密码\\
+                    email & varchar(254) & 无 & 用户的邮件\\
+                    is\_superuser & tinyint(1) & 非空 & 用户是否为管理员\\ 
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 攻略表（article）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & 攻略的ID\\
+                    title & varchar(200) & 非空 & 攻略的标题\\
+                    content & longtext & 非空 & 攻略的内容\\
+                    user\_id & int(11) & 非空 & 用户的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 讨论表（discussion）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & 讨论的ID\\
+                    content & longtext & 非空 & 讨论的内容\\
+                    user\_id & int(11) & 非空 & 用户的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 评论表（comment）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & 评论的ID\\
+                    content & longtext & 非空 & 评论的内容\\
+                    user\_id & int(11) & 非空 & 用户的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 景区攻略表（area\_article）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    article\_id & int(11) & 非空 & 攻略的ID\\
+                    area\_id & int(11) & 非空 & 景区的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 景区讨论表（area\_discussion）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    discussion\_id & int(11) & 非空 & 讨论的ID\\
+                    area\_id & int(11) & 非空 & 景区的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 景点攻略表（spot\_article）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    article\_id & int(11) & 非空 & 攻略的ID\\
+                    spot\_id & int(11) & 非空 & 景点的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 景点讨论表（spot\_discussion）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    discussion\_id & int(11) & 非空 & 讨论的ID\\
+                    spot\_id & int(11) & 非空 & 景点的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 景区评分表（area\_score）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    score & int(11) & 非空 & 评分\\
+                    area\_id & int(11) & 非空 & 景区的ID\\
+                    user\_id & int(11) & 非空 & 用户的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 景点评分表（spot\_score）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    score & int(11) & 非空 & 评分\\
+                    spot\_id & int(11) & 非空 & 景点的ID\\
+                    user\_id & int(11) & 非空 & 用户的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 攻略点赞表（vote\_article）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    article\_id & int(11) & 非空 & 攻略的ID\\
+                    user\_id & int(11) & 非空 & 用户的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 讨论点赞表（vote\_discussion）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    discussion\_id & int(11) & 非空 & 讨论的ID\\
+                    user\_id & int(11) & 非空 & 用户的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 攻略评论表（article\_comment）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    article\_id & int(11) & 非空 & 攻略的ID\\
+                    comment\_id & int(11) & 非空 & 评论的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 讨论评论表（discussion\_comment）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    discussion\_id & int(11) & 非空 & 讨论的ID\\
+                    comment\_id & int(11) & 非空 & 评论的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[htbp]
+                \caption{\wuhao 评论评论表（comment\_comment）}
+                \vspace{0.5em}\centering\wuhao
+                \begin{tabular}{llll}
+                    \toprule[1.5pt]
+                    字段 & 类型 & 限制 & 说明\\
+                    \midrule[1pt]
+                    id & int(11) & PK & ID\\
+                    comment\_d\_id & int(11) & 非空 & 目标评论的ID\\
+                    comment\_s\_id & int(11) & 非空 & 源评论的ID\\
+                    \bottomrule[1.5pt]
+                \end{tabular}
+            \end{table}
+
+    \section{本章小结}
+
+        本章主要讨论了系统功能结构和数据库的详细设计。系统功能结构方面首先通过一个整体的系统功能结构图给出了总体的设计以及功能模块的划分，再对数据库的各个表进行设计，最后对每个表内的每个字段进行设计，以完成整个系统的功能设计。

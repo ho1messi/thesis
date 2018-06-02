@@ -1,5 +1,5 @@
 % !Mode:: "TeX:UTF-8"
-\documentclass[capcenterlast=true,subcapcenterlast=true,openright=true,absupper=true,fontset=windowsnew,type=doctor]{hithesis}
+\documentclass[capcenterlast=true,subcapcenterlast=true,openright=true,absupper=true,fontset=windowsnew,type=bachelor]{hithesis}
 % 此处选项中不要有空格
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 必填选项
@@ -66,11 +66,11 @@
 \frontmatter
 \input{front/cover} % 封面
 \makecover
-\input{front/denotation}%物理量名称表,符合规范为主，有要求添加
+% \input{front/denotation}%物理量名称表,符合规范为主，有要求添加
 %\cleardoublepage  自定义在什么位置进行右翻页
 \tableofcontents    % 中文目录
 %\cleardoublepage  自定义在什么位置进行右翻页
-\tableofengcontents % 英文目录,硕本不要求
+%\tableofengcontents % 英文目录,硕本不要求
 
 \mainmatter
 %\linenumbers %debug 选项
@@ -85,22 +85,27 @@
 %\floatdesign %debug 选项
 %\caption{Float layout with rules}\label{fig:fludf} %debug 选项
 %\end{figure} %debug 选项
-\include{body/introduction}
+%\include{body/introduction}
+\include{body/chapter1}
+\include{body/chapter2}
+\include{body/chapter3}
+%\include{body/chapter4}
+\include{body/chapter5}
 
 \backmatter
 %硕博书序
 \include{back/conclusion}   % 结论
 \bibliographystyle{hithesis} %如果没有参考文献时候
 \bibliography{reference}
-\begin{appendix}%附录
-\input{back/appA.tex}
-\end{appendix}
-\include{back/publications}    % 所发文章
-\include{back/ceindex}    % 索引, 根据自己的情况添加或者不添加，选择自动添加或者手工添加。
+% \begin{appendix}%附录
+% \input{back/appA.tex}
+% \end{appendix}
+% \include{back/publications}    % 所发文章
+% \include{back/ceindex}    % 索引, 根据自己的情况添加或者不添加，选择自动添加或者手工添加。
 \authorization %授权
 %\authorization[saomiao.pdf] %添加扫描页的命令，与上互斥
 \include{back/acknowledgements} %致谢
-\include{back/resume}          % 博士学位论文有个人简介
+% \include{back/resume}          % 博士学位论文有个人简介
 
 %本科书序为：
 %\include{body/conclusion}   % 结论
